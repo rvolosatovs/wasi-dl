@@ -1,18 +1,35 @@
 package wasi:dl@0.2.0-draft;
 
 interface ffi {
-    resource alloc{ 
-        select: func(i: u32) -> option<alloc>;
+    /// Typed, well-aligned memory regions
+    resource alloc {
+        /// Allocates a new, typed, well-aligned memory region
+        new: static func(ty: ffi-type) -> result<alloc>;
 
+        /// Write a `outgoing-primitive` into the memory region
+        /// Fails if type of the region is not `ffi-type::primitive` or the value does not fit
         write-primitive: func(v: outgoing-primitive) -> result;
+
+        /// Write a `outgoing-struct` into the memory region
+        /// Fails if type of the region is not `ffi-type::struct` or the value does not fit
         write-struct: func(v: outgoing-struct) -> result;
+
+        /// Write a sting into the memory region
+        /// Fails if type of the region is not `pointer`
         write-string: func(v: string) -> result;
 
-        read-primitive: func() -> result<incoming-primitive>;
-        read-struct: func() -> result<incoming-struct>;
-        read-string: func() -> result<string>;
 
-        new: static func(types: list<ffi-type>) -> result<alloc>;
+        /// Reads a primitive from the memory region
+        /// Fails if type of the region is not `ffi-type::primitive`
+        read-primitive: func() -> result<incoming-primitive>;
+
+        /// Reads a struct from the memory region
+        /// Fails if type of the region is not `ffi-type::struct`
+        read-struct: func() -> result<incoming-struct>;
+
+        /// Reads a C string from the memory region
+        /// Fails if type of the region is not `pointer`
+        read-string: func() -> result<string>;
     }
 
     enum primitive-type {
@@ -111,22 +128,27 @@ interface dll {
     use ffi.{alloc, ffi-type, outgoing-value, incoming-value};
 
     resource function {
-        call: func(args: list<outgoing-value>) -> result<option<incoming-value>>;
+        /// Constructs a function from an opaque `alloc` and a type signature
+        /// Fails if type of `alloc` is not `ffi-type::pointer`
+        from-alloc: static func(alloc: alloc, args: list<ffi-type>, ret: option<ffi-type>) -> result<function>;
 
-        /// Constructs a function from an opaque `alloc`
-        from-alloc: static func(args: list<ffi-type>, ret: option<ffi-type>) -> function;
+        /// Calls a function with specified arguments
+        /// Fails if argument types do not match function type signature
+        call: func(args: list<outgoing-value>) -> result<option<incoming-value>>;
 
         /// Returns a function as an opaque `alloc`
         get-alloc: func() -> alloc;
     }
 
     resource symbol {
-        function: func(args: list<ffi-type>, ret: option<ffi-type>) -> function;
+        /// Returns symbol as a typed `function`
+        get-function: func(args: list<ffi-type>, ret: option<ffi-type>) -> function;
 
-        /// Returns symbol as an opaque `alloc`
-        get-alloc: func() -> alloc;
+        /// Returns symbol as a typed `alloc`
+        get-alloc: func(ty: ffi-type) -> alloc;
     }
 
+    /// `library::open` flags passed to `dlopen` by the host
     flags open-flags {
         lazy,
         now,
@@ -135,9 +157,11 @@ interface dll {
     }
 
     resource library {
+        /// Opens a library using `dlopen`
         open: static func(name: option<string>, flag: open-flags) -> result<library, string>;
         // TODO: Add default() and next() ?
 
+        /// Gets a symbol from a library using `dlsym`
         get: func(name: string) -> result<symbol, string>;
     }
 
