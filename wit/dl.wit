@@ -15,7 +15,7 @@ interface ffi {
         write-struct: func(v: outgoing-struct) -> result;
 
         /// Write a sting into the memory region
-        /// Fails if type of the region is not `pointer`
+        /// Fails if type of the region is not `ffi-type::primitive(primitive-type::pointer)`
         write-string: func(v: string) -> result;
 
 
@@ -28,7 +28,7 @@ interface ffi {
         read-struct: func() -> result<incoming-struct>;
 
         /// Reads a C string from the memory region
-        /// Fails if type of the region is not `pointer`
+        /// Fails if type of the region is not `ffi-type::primitive(primitive-type::pointer)`
         read-string: func() -> result<string>;
     }
 
@@ -129,14 +129,14 @@ interface dll {
 
     resource function {
         /// Constructs a function from an opaque `alloc` and a type signature
-        /// Fails if type of `alloc` is not `ffi-type::pointer`
+        /// Fails if type of `alloc` is not `ffi-type::primitive(primitive-type::pointer)`
         from-alloc: static func(alloc: alloc, args: list<ffi-type>, ret: option<ffi-type>) -> result<function>;
 
         /// Calls a function with specified arguments
         /// Fails if argument types do not match function type signature
         call: func(args: list<outgoing-value>) -> result<option<incoming-value>>;
 
-        /// Returns a function as an opaque `alloc`
+        /// Returns a function as an opaque `alloc` of `ffi-type::primitive(primitive-type::pointer)` type
         get-alloc: func() -> alloc;
     }
 
