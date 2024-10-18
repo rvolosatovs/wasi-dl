@@ -122,6 +122,9 @@ interface dll {
 
     resource symbol {
         function: func(args: list<ffi-type>, ret: option<ffi-type>) -> function;
+
+        /// Returns symbol as an opaque `alloc`
+        get-alloc: func() -> alloc;
     }
 
     flags open-flags {
